@@ -99,10 +99,12 @@ fn start_render_loop(minefield: &mut [[Square; MAP_SIZE_WIDTH]; MAP_SIZE_HEIGHT]
     mv(0, 0);
     printw(&format!("Character: {}", character));
     match character {
-      // Selecting a square (the enter key)
+      // Selecting a square (the enter key). Can only select non flagged squares.
       10 => {
-        // Mark the mine as discovered
-        minefield[pos_x as usize][pos_y as usize].is_discovered = true;
+        if minefield[pos_x as usize][pos_y as usize].is_flagged == false {
+          // Mark the mine as discovered
+          minefield[pos_x as usize][pos_y as usize].is_discovered = true;
+        }
 
         // If there was a bomb on that square, stop the game.
         /* if mine.is_mine { */
@@ -117,9 +119,10 @@ fn start_render_loop(minefield: &mut [[Square; MAP_SIZE_WIDTH]; MAP_SIZE_HEIGHT]
       108 => pos_x += 1,
       104 => pos_x -= 1,
 
-      // The m key to mark something as a bomb
+      // The f key to flag something as a bomb
       // It only works on cells that haven't been previously discovered.
-      109 => {
+      // If a cell isn't discovered, flag it.
+      102 => {
         let mine = minefield[pos_x as usize][pos_y as usize];
         if minefield[pos_x as usize][pos_y as usize].is_discovered == false {
           minefield[pos_x as usize][pos_y as usize].is_flagged = !mine.is_flagged;
