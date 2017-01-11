@@ -11,17 +11,6 @@ const PRESET_FLAG: i16 = 1;
 const MAP_SIZE_WIDTH: usize = 10;
 const MAP_SIZE_HEIGHT: usize = 10;
 
-/// Create a string that is n characters long all of the given character.
-/// n_chars(5, ' ') returns "     " (5 spaces)
-fn n_chars(n: i32, character: char) -> String {
-  let mut padding = String::new();
-  for _ in 0..n {
-    padding.push(character);
-  }
-
-  padding.clone()
-}
-
 /// Given a square of the minefield, return the character to draw for that square.
 fn get_mine_character(mine: Square) -> char {
   if mine.is_flagged {
@@ -33,7 +22,8 @@ fn get_mine_character(mine: Square) -> char {
     // Display the number associated with the square
     mine.number.to_string().chars().nth(0).unwrap()
   } else {
-    '*'
+    /* '*' */
+    mine.number.to_string().chars().nth(0).unwrap()
   }
 }
 
@@ -79,7 +69,7 @@ fn start_render_loop(minefield: &mut [[Square; MAP_SIZE_WIDTH]; MAP_SIZE_HEIGHT]
         // All other lines.
         /* printw(&n_chars(max_x, ' ')); */
         let mut total = String::new();
-        for i in 0..MAP_SIZE_WIDTH {
+        for i in 0..max_x {
           let mine = minefield[i as usize][y as usize];
           total.push(get_mine_character(mine));
         }
@@ -187,7 +177,7 @@ fn count_mines_around(
   total
 }
 
-fn main() {
+fn generate_minefield() -> [[Square; MAP_SIZE_WIDTH]; MAP_SIZE_HEIGHT] {
   let mut minefield = [[Square {
     is_discovered: false,
     number: 0,
@@ -200,16 +190,23 @@ fn main() {
   // Generate all the mines, placing them randomly around the map.
   for i in 0..MAP_SIZE_WIDTH {
     for j in 0..MAP_SIZE_HEIGHT {
-      minefield[i][j].is_mine = rng.gen();
+      minefield[i][j].is_mine = rng.gen_range(1, 6) == 1;
     }
   }
 
   // Find alll the numbers for each square
   for i in 0..MAP_SIZE_WIDTH {
     for j in 0..MAP_SIZE_HEIGHT {
-      minefield[i][j].number = count_mines_around(minefield, i, j);
+      if !minefield[i][j].is_mine {
+        minefield[i][j].number = count_mines_around(minefield, i, j);
+      }
     }
   }
 
+  minefield
+}
+
+fn main() {
+  let mut minefield = generate_minefield();
   start_render_loop(&mut minefield);
 }
