@@ -19,7 +19,7 @@ fn n_chars(n: i32, character: char) -> String {
     padding.push(character);
   }
 
-  return padding.clone();
+  padding.clone()
 }
 
 /// Given a square of the minefield, return the character to draw for that square.
@@ -107,9 +107,9 @@ fn start_render_loop(minefield: &mut [[Square; MAP_SIZE_WIDTH]; MAP_SIZE_HEIGHT]
         }
 
         // If there was a bomb on that square, stop the game.
-        /* if mine.is_mine { */
-        /*   is_running = false; */
-        /* } */
+        if minefield[pos_x as usize][pos_y as usize].is_mine {
+          is_running = false;
+        }
       },
 
       // Movement
@@ -159,19 +159,32 @@ fn get_minefield_number(
   }
 }
 
+/// Given a minefield and a position, determine the amount of mines around the given tile.
 fn count_mines_around(
   minefield: [[Square; MAP_SIZE_WIDTH]; MAP_SIZE_HEIGHT],
   x: usize,
   y: usize,
 ) -> i8 {
-  get_minefield_number(minefield, x+1, y) +
-  get_minefield_number(minefield, x+1, y+1) +
-  get_minefield_number(minefield, x, y+1) +
-  get_minefield_number(minefield, x-1, y+1) +
-  get_minefield_number(minefield, x-1, y) +
-  get_minefield_number(minefield, x-1, y-1) +
-  get_minefield_number(minefield, x, y-1) +
-  get_minefield_number(minefield, x+1, y-1)
+  // All this crazyness below is to make sure that we don't ever go outside of the map (ie, on
+  // corners there'll be issues with tiles that are outside the map in the 3x3 around a tile.)
+  let mut total = get_minefield_number(minefield, x+1, y) +
+                  get_minefield_number(minefield, x+1, y+1) +
+                  get_minefield_number(minefield, x, y+1);
+
+  if x >= 1 {
+    total += get_minefield_number(minefield, x-1, y+1) +
+             get_minefield_number(minefield, x-1, y);
+  }
+  if y >= 1 {
+    total += get_minefield_number(minefield, x, y-1) +
+             get_minefield_number(minefield, x+1, y-1);
+  }
+
+  if x >= 1 && y >= 1 {
+    total += get_minefield_number(minefield, x-1, y-1);
+  }
+
+  total
 }
 
 fn main() {
@@ -192,8 +205,8 @@ fn main() {
   }
 
   // Find alll the numbers for each square
-  for i in 1..MAP_SIZE_WIDTH {
-    for j in 1..MAP_SIZE_HEIGHT {
+  for i in 0..MAP_SIZE_WIDTH {
+    for j in 0..MAP_SIZE_HEIGHT {
       minefield[i][j].number = count_mines_around(minefield, i, j);
     }
   }
