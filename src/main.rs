@@ -35,99 +35,6 @@ fn get_mine_color(mine: Square) -> Option<i16> {
   }
 }
 
-fn start_render_loop(minefield: &mut [[Square; MAP_SIZE_WIDTH]; MAP_SIZE_HEIGHT]) {
-  /* Start ncurses. */
-  initscr();
-
-  // Get the cursor position
-  let mut pos_x = 0;
-  let mut pos_y = 5;
-
-  // While this is true, keep looping through the mainloop.
-  let mut is_running = true;
-
-  while is_running {
-    // Get the screen bounds.
-    let max_x: i32 = MAP_SIZE_WIDTH as i32;
-    let max_y: i32 = MAP_SIZE_HEIGHT as i32;
-    /* getmaxyx(stdscr(), &mut max_y, &mut max_x); */
-
-    start_color();
-    init_color(COLOR_BACKGROUND, 0, 0, 0);
-    /* init_pair(PRESET_FLAG, COLOR_RED, COLOR_BLACK); */
-    init_pair(PRESET_FLAG, COLOR_BLACK, COLOR_RED);
-    /* attron(COLOR_PAIR(PRESET_FLAG)); */
-
-    // line by line, render the minefield
-    for y in 0..max_y {
-      mv(y, 0);
-
-      // The final line!
-      if y == max_y - 1 {
-        printw(":");
-      } else {
-        // All other lines.
-        /* printw(&n_chars(max_x, ' ')); */
-        let mut total = String::new();
-        for i in 0..max_x {
-          let mine = minefield[i as usize][y as usize];
-          total.push(get_mine_character(mine));
-        }
-        printw(&total);
-      }
-    }
-
-    // Draw the cursor
-    mv(pos_y, pos_x);
-
-
-    // log stuff out!
-    /* mv(0, 0); */
-    /* printw(&format!("Position Y: {}", pos_y)); */
-
-    let character = getch();
-    mv(0, 0);
-    printw(&format!("Character: {}", character));
-    match character {
-      // Selecting a square (the enter key). Can only select non flagged squares.
-      10 => {
-        if minefield[pos_x as usize][pos_y as usize].is_flagged == false {
-          // Mark the mine as discovered
-          minefield[pos_x as usize][pos_y as usize].is_discovered = true;
-        }
-
-        // If there was a bomb on that square, stop the game.
-        if minefield[pos_x as usize][pos_y as usize].is_mine {
-          is_running = false;
-        }
-      },
-
-      // Movement
-      // TODO: Make sure we stay within the bounds
-      106 => pos_y += 1,
-      107 => pos_y -= 1,
-      108 => pos_x += 1,
-      104 => pos_x -= 1,
-
-      // The f key to flag something as a bomb
-      // It only works on cells that haven't been previously discovered.
-      // If a cell isn't discovered, flag it.
-      102 => {
-        let mine = minefield[pos_x as usize][pos_y as usize];
-        if minefield[pos_x as usize][pos_y as usize].is_discovered == false {
-          minefield[pos_x as usize][pos_y as usize].is_flagged = !mine.is_flagged;
-        }
-      }
-      _ => (),
-    };
-
-    refresh();
-  }
-
-  // Cleanup ncurses
-  endwin();
-}
-
 #[derive(Copy, Clone, Debug)]
 struct Square {
   is_discovered: bool,
@@ -177,7 +84,7 @@ fn count_mines_around(
   total
 }
 
-fn generate_minefield() -> [[Square; MAP_SIZE_WIDTH]; MAP_SIZE_HEIGHT] {
+fn generate_minefield(pos_x: usize, pos_y: usize) -> [[Square; MAP_SIZE_WIDTH]; MAP_SIZE_HEIGHT] {
   let mut minefield = [[Square {
     is_discovered: false,
     number: 0,
@@ -197,7 +104,9 @@ fn generate_minefield() -> [[Square; MAP_SIZE_WIDTH]; MAP_SIZE_HEIGHT] {
   // Find alll the numbers for each square
   for i in 0..MAP_SIZE_WIDTH {
     for j in 0..MAP_SIZE_HEIGHT {
-      if !minefield[i][j].is_mine {
+      if pos_x == i && pos_y == j {
+        minefield[i][j].number = 0;
+      } else if !minefield[i][j].is_mine {
         minefield[i][j].number = count_mines_around(minefield, i, j);
       }
     }
@@ -207,6 +116,109 @@ fn generate_minefield() -> [[Square; MAP_SIZE_WIDTH]; MAP_SIZE_HEIGHT] {
 }
 
 fn main() {
-  let mut minefield = generate_minefield();
-  start_render_loop(&mut minefield);
+  // Generate the initial minefield
+  let mut minefield = [[Square {
+    is_discovered: false,
+    number: 0,
+    is_mine: false,
+    is_flagged: false,
+  }; MAP_SIZE_WIDTH]; MAP_SIZE_HEIGHT];
+  let mut minefield_generated = false;
+
+  /* Start ncurses. */
+  initscr();
+
+  // Get the cursor position
+  let mut pos_x: i32 = 0;
+  let mut pos_y: i32 = 5;
+
+  // While this is true, keep looping through the mainloop.
+  let mut is_running = true;
+
+  while is_running {
+    // Get the screen bounds.
+    let max_x: i32 = MAP_SIZE_WIDTH as i32;
+    let max_y: i32 = MAP_SIZE_HEIGHT as i32;
+    /* getmaxyx(stdscr(), &mut max_y, &mut max_x); */
+
+    start_color();
+    init_color(COLOR_BACKGROUND, 0, 0, 0);
+    /* init_pair(PRESET_FLAG, COLOR_RED, COLOR_BLACK); */
+    init_pair(PRESET_FLAG, COLOR_BLACK, COLOR_RED);
+    /* attron(COLOR_PAIR(PRESET_FLAG)); */
+
+    // line by line, render the minefield
+    for y in 0..max_y {
+      mv(y, 0);
+
+      // The final line!
+      if y == max_y - 1 {
+        printw(":");
+      } else {
+        // All other lines.
+        /* printw(&n_chars(max_x, ' ')); */
+        let mut total = String::new();
+        for i in 0..max_x {
+          let mine = minefield[i as usize][y as usize];
+          total.push(get_mine_character(mine));
+        }
+        printw(&total);
+      }
+    }
+
+    // Draw the cursor
+    mv(pos_y, pos_x);
+
+
+    // log stuff out!
+    /* mv(0, 0); */
+    /* printw(&format!("Position Y: {}", pos_y)); */
+
+    let character = getch();
+    mv(0, 0);
+    printw(&format!("Character: {}", character));
+    match character {
+      // Selecting a square (the enter key). Can only select non flagged squares.
+      10 => {
+        if !minefield_generated {
+          minefield = generate_minefield(pos_x as usize, pos_y as usize);
+          minefield_generated = true;
+        }
+
+        if minefield[pos_x as usize][pos_y as usize].is_flagged == false {
+          // Mark the mine as discovered
+          minefield[pos_x as usize][pos_y as usize].is_discovered = true;
+        }
+
+        // If there was a bomb on that square, stop the game.
+        if minefield[pos_x as usize][pos_y as usize].is_mine {
+          is_running = false;
+        }
+      },
+
+      // Movement
+      // TODO: Make sure we stay within the bounds
+      106 => pos_y += 1,
+      107 => pos_y -= 1,
+      108 => pos_x += 1,
+      104 => pos_x -= 1,
+
+      // The f key to flag something as a bomb
+      // It only works on cells that haven't been previously discovered.
+      // If a cell isn't discovered, flag it.
+      102 => {
+        let mine = minefield[pos_x as usize][pos_y as usize];
+        if minefield[pos_x as usize][pos_y as usize].is_discovered == false {
+          minefield[pos_x as usize][pos_y as usize].is_flagged = !mine.is_flagged;
+        }
+      }
+      _ => (),
+    };
+
+    refresh();
+  }
+
+  // Cleanup ncurses
+  endwin();
 }
+
