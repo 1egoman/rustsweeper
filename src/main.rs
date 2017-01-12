@@ -5,7 +5,12 @@ mod tile;
 mod generate_map;
 mod minefield;
 
-use minefield::{MAP_SIZE_WIDTH, MAP_SIZE_HEIGHT, propegate_zeros_through_minefield};
+use minefield::{
+  MAP_SIZE_WIDTH,
+  MAP_SIZE_HEIGHT,
+  propegate_zeros_through_minefield,
+  render,
+};
 
 fn main() {
   // Generate the initial minefield
@@ -27,35 +32,8 @@ fn main() {
   let mut is_running = true;
 
   while is_running {
-    // line by line, render the minefield
-    for x in 0..MAP_SIZE_WIDTH {
-      for y in 0..MAP_SIZE_HEIGHT {
-        let mine = minefield[x as usize][y as usize];
-        let color = mine.get_color();
-
-        // Move the the position where that mine will be drawn
-        mv(y as i32, x as i32);
-
-        let mut total = String::new();
-        total.push(mine.get_repr());
-
-        // Render the item in color, if there was no color, then just render it.
-        match color {
-          Some(color) => {
-            attron(color);
-            printw(&total);
-            attroff(color);
-          }
-          None => {
-            printw(&total);
-          }
-        }
-      }
-    }
-
-    // The final line!
-    mv(MAP_SIZE_HEIGHT as i32, 0);
-    printw(":");
+    // Render the minefield.
+    render(minefield);
 
     // Draw the cursor
     mv(pos_y as i32, pos_x as i32);
@@ -116,6 +94,24 @@ fn main() {
     refresh();
   }
 
+  // At this point, the user stepped on a mine :/
+  // So...
+
+  // Make the whole minefield visible
+  for x in 0..MAP_SIZE_WIDTH {
+    for y in 0..MAP_SIZE_HEIGHT {
+      minefield[x][y].is_discovered = true;
+    }
+  }
+
+  // Render the minefield, showing all the parts of the field.
+  render(minefield);
+
+  // Wait for the user to press a key
+  getch();
+
   // Cleanup ncurses
   endwin();
+
+  // And we're done!
 }

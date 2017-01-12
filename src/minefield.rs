@@ -1,5 +1,8 @@
 use tile;
 
+extern crate ncurses;
+use ncurses::*;
+
 pub type Minefield = [[tile::Tile; MAP_SIZE_HEIGHT]; MAP_SIZE_WIDTH];
 
 // Assemble a minefield
@@ -47,4 +50,36 @@ pub fn propegate_zeros_through_minefield(
       }
     }
   }
+}
+
+pub fn render(minefield: Minefield) {
+  // line by line, render the minefield
+  for x in 0..MAP_SIZE_WIDTH {
+    for y in 0..MAP_SIZE_HEIGHT {
+      let mine = minefield[x as usize][y as usize];
+      let color = mine.get_color();
+
+      // Move the the position where that mine will be drawn
+      mv(y as i32, x as i32);
+
+      let mut total = String::new();
+      total.push(mine.get_repr());
+
+      // Render the item in color, if there was no color, then just render it.
+      match color {
+        Some(color) => {
+          attron(color);
+          printw(&total);
+          attroff(color);
+        }
+        None => {
+          printw(&total);
+        }
+      }
+    }
+  }
+
+  // The final line!
+  mv(MAP_SIZE_HEIGHT as i32, 0);
+  printw(":");
 }
