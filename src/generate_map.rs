@@ -2,14 +2,13 @@ extern crate rand;
 use self::rand::Rng;
 
 use tile;
-
-use super::minefield::{MAP_SIZE_WIDTH, MAP_SIZE_HEIGHT};
+use minefield::{MAP_SIZE_WIDTH, MAP_SIZE_HEIGHT};
 
 pub fn generate(
   pos_x: usize,
   pos_y: usize,
-) -> [[tile::Tile; MAP_SIZE_WIDTH]; MAP_SIZE_HEIGHT] {
-  let mut minefield = [[tile::Tile::new(0); MAP_SIZE_WIDTH]; MAP_SIZE_HEIGHT];
+) -> [[tile::Tile; MAP_SIZE_HEIGHT]; MAP_SIZE_WIDTH] {
+  let mut minefield = [[tile::Tile::new(0); MAP_SIZE_HEIGHT]; MAP_SIZE_WIDTH];
 
   let mut rng = rand::thread_rng();
 
@@ -39,7 +38,7 @@ pub fn generate(
 
 /// Given a minefield and a position, determine the amount of mines around the given tile.
 fn count_mines_around(
-  minefield: [[tile::Tile; MAP_SIZE_WIDTH]; MAP_SIZE_HEIGHT],
+  minefield: [[tile::Tile; MAP_SIZE_HEIGHT]; MAP_SIZE_WIDTH],
   x: usize,
   y: usize,
 ) -> i8 {
@@ -67,7 +66,7 @@ fn count_mines_around(
 
 /// Given a minefield position, return the number at a given tile of the field.
 fn get_minefield_number(
-  minefield: [[tile::Tile; MAP_SIZE_WIDTH]; MAP_SIZE_HEIGHT],
+  minefield: [[tile::Tile; MAP_SIZE_HEIGHT]; MAP_SIZE_WIDTH],
   x: usize,
   y: usize,
 ) -> i8 {

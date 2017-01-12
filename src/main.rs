@@ -9,64 +9,57 @@ use minefield::{MAP_SIZE_WIDTH, MAP_SIZE_HEIGHT};
 
 fn main() {
   // Generate the initial minefield
-  let mut minefield = [[tile::Tile::new(0); MAP_SIZE_WIDTH]; MAP_SIZE_HEIGHT];
+  let mut minefield = [[tile::Tile::new(0); MAP_SIZE_HEIGHT]; MAP_SIZE_WIDTH];
   let mut minefield_generated = false;
 
   /* Start ncurses. */
   initscr();
 
+  // initialize colors
+  start_color();
+  tile::initialize_tile_colors();
+
   // Get the cursor position
-  let mut pos_x: i32 = 0;
-  let mut pos_y: i32 = 5;
+  let mut pos_x = MAP_SIZE_WIDTH / 2;
+  let mut pos_y = MAP_SIZE_HEIGHT / 2;
 
   // While this is true, keep looping through the mainloop.
   let mut is_running = true;
 
   while is_running {
-    // Get the screen bounds.
-    let max_x: i32 = MAP_SIZE_WIDTH as i32;
-    let max_y: i32 = MAP_SIZE_HEIGHT as i32;
-    /* getmaxyx(stdscr(), &mut max_y, &mut max_x); */
-
-    // initialize colors
-    start_color();
-    tile::initialize_tile_colors();
 
     // line by line, render the minefield
-    for y in 0..max_y {
-      mv(y, 0);
+    for x in 0..MAP_SIZE_WIDTH {
+      for y in 0..MAP_SIZE_HEIGHT {
+        let mine = minefield[x as usize][y as usize];
+        let color = mine.get_color();
 
-      // The final line!
-      if y == max_y - 1 {
-        printw(":");
-      } else {
-        // All other lines.
-        /* printw(&n_chars(max_x, ' ')); */
-        for i in 0..max_x {
-          mv(y, i);
-          let mine = minefield[i as usize][y as usize];
-          let color = mine.get_color();
+        // Move the the position where that mine will be drawn
+        mv(y as i32, x as i32);
 
-          let mut total = String::new();
-          total.push(mine.get_repr());
+        let mut total = String::new();
+        total.push(mine.get_repr());
 
-          // Render the item in color, if there was no color, then just render it.
-          match color {
-            Some(color) => {
-              attron(color);
-              printw(&total);
-              attroff(color);
-            }
-            None => {
-              printw(&total);
-            }
+        // Render the item in color, if there was no color, then just render it.
+        match color {
+          Some(color) => {
+            attron(color);
+            printw(&total);
+            attroff(color);
+          }
+          None => {
+            printw(&total);
           }
         }
       }
     }
 
+    // The final line!
+    mv(MAP_SIZE_HEIGHT as i32, 0);
+    printw(":");
+
     // Draw the cursor
-    mv(pos_y, pos_x);
+    mv(pos_y as i32, pos_x as i32);
 
 
     // log stuff out!
@@ -81,17 +74,17 @@ fn main() {
       10 => {
         // If this is the first mine to be hit, generate the minefield
         if !minefield_generated {
-          minefield = generate_map::generate(pos_x as usize, pos_y as usize);
+          minefield = generate_map::generate(pos_x, pos_y);
           minefield_generated = true;
         }
 
         // Mark the mine as discovered
-        if minefield[pos_x as usize][pos_y as usize].is_flagged == false {
-          minefield[pos_x as usize][pos_y as usize].is_discovered = true;
+        if minefield[pos_x][pos_y].is_flagged == false {
+          minefield[pos_x][pos_y].is_discovered = true;
         }
 
         // If there was a bomb on that tile, stop the game.
-        if minefield[pos_x as usize][pos_y as usize].is_mine {
+        if minefield[pos_x][pos_y].is_mine {
           is_running = false;
         }
 
