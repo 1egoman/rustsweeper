@@ -5,7 +5,7 @@ mod tile;
 mod generate_map;
 mod minefield;
 
-use minefield::{MAP_SIZE_WIDTH, MAP_SIZE_HEIGHT};
+use minefield::{MAP_SIZE_WIDTH, MAP_SIZE_HEIGHT, propegate_zeros_through_minefield};
 
 fn main() {
   // Generate the initial minefield
@@ -27,7 +27,6 @@ fn main() {
   let mut is_running = true;
 
   while is_running {
-
     // line by line, render the minefield
     for x in 0..MAP_SIZE_WIDTH {
       for y in 0..MAP_SIZE_HEIGHT {
@@ -88,11 +87,11 @@ fn main() {
           is_running = false;
         }
 
-        /* // If the tile was a zero, propegate the zero through and clear the rest of the zeros */
-        /* // around it. */
-        /* if minefield[pos_x as usize][pos_y as usize].number == 0 { */
-        /*   propegate_zeros_through_minefield(&mut minefield, pos_x as usize, pos_y as usize); */
-        /* } */
+        // If the tile was a zero, propegate the zero through and clear the rest of the zeros
+        // around it.
+        if minefield[pos_x as usize][pos_y as usize].number == 0 {
+          propegate_zeros_through_minefield(&mut minefield, pos_x as usize, pos_y as usize);
+        }
       },
 
       // Movement
@@ -120,15 +119,3 @@ fn main() {
   // Cleanup ncurses
   endwin();
 }
-
-/* fn propegate_zeros_through_minefield( */
-/*   &mut minefield: [[tile::Tile; MAP_SIZE_WIDTH]; MAP_SIZE_HEIGHT], */
-/*   initial_x: usize, */
-/*   initial_y: usize, */
-/* ) -> [[tile::Tile; MAP_SIZE_WIDTH]; MAP_SIZE_HEIGHT] { */
-/*   minefield[initial_x][initial_y].is_discovered = true; */
-/*  */
-/*   if minefield[initial_x+1][initial_y-1] == 0 { */
-/*     propegate_zeros_through_minefield(minefield, initial_x+1, initial_y+1) */
-/*   } */
-/* } */
