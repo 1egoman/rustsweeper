@@ -4,36 +4,12 @@ use ncurses::*;
 extern crate rand;
 use rand::Rng;
 
-const COLOR_BACKGROUND: i16 = 16;
-const PRESET_FLAG: i16 = 1;
+mod minemap;
 
 // Assemble a minefield
-const MAP_SIZE_WIDTH: usize = 10;
-const MAP_SIZE_HEIGHT: usize = 10;
+const MAP_SIZE_WIDTH: usize = 20;
+const MAP_SIZE_HEIGHT: usize = 20;
 
-/// Given a square of the minefield, return the character to draw for that square.
-fn get_mine_character(mine: Square) -> char {
-  if mine.is_flagged {
-    'F'
-  } else if mine.is_discovered && mine.is_mine {
-    // If we know it's a bomb, then display that.
-    'B'
-  } else if mine.is_discovered {
-    // Display the number associated with the square
-    mine.number.to_string().chars().nth(0).unwrap()
-  } else {
-    /* '*' */
-    mine.number.to_string().chars().nth(0).unwrap()
-  }
-}
-
-fn get_mine_color(mine: Square) -> Option<i16> {
-  if mine.is_flagged {
-    Some(PRESET_FLAG)
-  } else {
-    None
-  }
-}
 
 #[derive(Copy, Clone, Debug)]
 struct Square {
@@ -45,7 +21,7 @@ struct Square {
 
 /// Given a minefield position, return the number at a given square of the field.
 fn get_minefield_number(
-  minefield: [[Square; MAP_SIZE_WIDTH]; MAP_SIZE_HEIGHT],
+  minefield: [[minemap::Square; MAP_SIZE_WIDTH]; MAP_SIZE_HEIGHT],
   x: usize,
   y: usize,
 ) -> i8 {
@@ -58,7 +34,7 @@ fn get_minefield_number(
 
 /// Given a minefield and a position, determine the amount of mines around the given tile.
 fn count_mines_around(
-  minefield: [[Square; MAP_SIZE_WIDTH]; MAP_SIZE_HEIGHT],
+  minefield: [[minemap::Square; MAP_SIZE_WIDTH]; MAP_SIZE_HEIGHT],
   x: usize,
   y: usize,
 ) -> i8 {
@@ -84,8 +60,8 @@ fn count_mines_around(
   total
 }
 
-fn generate_minefield(pos_x: usize, pos_y: usize) -> [[Square; MAP_SIZE_WIDTH]; MAP_SIZE_HEIGHT] {
-  let mut minefield = [[Square {
+fn generate_minefield(pos_x: usize, pos_y: usize) -> [[minemap::Square; MAP_SIZE_WIDTH]; MAP_SIZE_HEIGHT] {
+  let mut minefield = [[minemap::Square {
     is_discovered: false,
     number: 0,
     is_mine: false,
@@ -100,6 +76,9 @@ fn generate_minefield(pos_x: usize, pos_y: usize) -> [[Square; MAP_SIZE_WIDTH]; 
       minefield[i][j].is_mine = rng.gen_range(1, 6) == 1;
     }
   }
+
+  // Make sure the initial square isn't a mine.
+  minefield[pos_x][pos_y].is_mine = false;
 
   // Find alll the numbers for each square
   for i in 0..MAP_SIZE_WIDTH {
@@ -117,7 +96,7 @@ fn generate_minefield(pos_x: usize, pos_y: usize) -> [[Square; MAP_SIZE_WIDTH]; 
 
 fn main() {
   // Generate the initial minefield
-  let mut minefield = [[Square {
+  let mut minefield = [[minemap::Square {
     is_discovered: false,
     number: 0,
     is_mine: false,
@@ -141,11 +120,9 @@ fn main() {
     let max_y: i32 = MAP_SIZE_HEIGHT as i32;
     /* getmaxyx(stdscr(), &mut max_y, &mut max_x); */
 
+    // initialize colors
     start_color();
-    init_color(COLOR_BACKGROUND, 0, 0, 0);
-    /* init_pair(PRESET_FLAG, COLOR_RED, COLOR_BLACK); */
-    init_pair(PRESET_FLAG, COLOR_BLACK, COLOR_RED);
-    /* attron(COLOR_PAIR(PRESET_FLAG)); */
+    minemap::initialize_square_colors();
 
     // line by line, render the minefield
     for y in 0..max_y {
@@ -157,12 +134,26 @@ fn main() {
       } else {
         // All other lines.
         /* printw(&n_chars(max_x, ' ')); */
-        let mut total = String::new();
         for i in 0..max_x {
+          mv(y, i);
           let mine = minefield[i as usize][y as usize];
-          total.push(get_mine_character(mine));
+          let color = mine.get_color();
+
+          let mut total = String::new();
+          total.push(mine.get_repr());
+
+          // Render the item in color, if there was no color, then just render it.
+          match color {
+            Some(color) => {
+              attron(color);
+              printw(&total);
+              attroff(color);
+            }
+            None => {
+              printw(&total);
+            }
+          }
         }
-        printw(&total);
       }
     }
 
@@ -180,13 +171,14 @@ fn main() {
     match character {
       // Selecting a square (the enter key). Can only select non flagged squares.
       10 => {
+        // If this is the first mine to be hit, generate the minefield
         if !minefield_generated {
           minefield = generate_minefield(pos_x as usize, pos_y as usize);
           minefield_generated = true;
         }
 
+        // Mark the mine as discovered
         if minefield[pos_x as usize][pos_y as usize].is_flagged == false {
-          // Mark the mine as discovered
           minefield[pos_x as usize][pos_y as usize].is_discovered = true;
         }
 
@@ -194,6 +186,12 @@ fn main() {
         if minefield[pos_x as usize][pos_y as usize].is_mine {
           is_running = false;
         }
+
+        /* // If the square was a zero, propegate the zero through and clear the rest of the zeros */
+        /* // around it. */
+        /* if minefield[pos_x as usize][pos_y as usize].number == 0 { */
+        /*   propegate_zeros_through_minefield(&mut minefield, pos_x as usize, pos_y as usize); */
+        /* } */
       },
 
       // Movement
@@ -208,7 +206,7 @@ fn main() {
       // If a cell isn't discovered, flag it.
       102 => {
         let mine = minefield[pos_x as usize][pos_y as usize];
-        if minefield[pos_x as usize][pos_y as usize].is_discovered == false {
+        if minefield_generated && minefield[pos_x as usize][pos_y as usize].is_discovered == false {
           minefield[pos_x as usize][pos_y as usize].is_flagged = !mine.is_flagged;
         }
       }
@@ -222,3 +220,14 @@ fn main() {
   endwin();
 }
 
+/* fn propegate_zeros_through_minefield( */
+/*   &mut minefield: [[minemap::Square; MAP_SIZE_WIDTH]; MAP_SIZE_HEIGHT], */
+/*   initial_x: usize, */
+/*   initial_y: usize, */
+/* ) -> [[minemap::Square; MAP_SIZE_WIDTH]; MAP_SIZE_HEIGHT] { */
+/*   minefield[initial_x][initial_y].is_discovered = true; */
+/*  */
+/*   if minefield[initial_x+1][initial_y-1] == 0 { */
+/*     propegate_zeros_through_minefield(minefield, initial_x+1, initial_y+1) */
+/*   } */
+/* } */
