@@ -12,7 +12,7 @@ use ncurses::COLOR_MAGENTA;
 use ncurses::COLOR_CYAN;
 
 #[derive(Copy, Clone, Debug)]
-pub struct Square {
+pub struct Tile{
   pub is_discovered: bool,
   pub number: i8,
   pub is_mine: bool,
@@ -28,7 +28,7 @@ const PRESET_FOUR: i16 = 5;
 const PRESET_FIVE: i16 = 6;
 const PRESET_SIX: i16 = 7;
 
-pub fn initialize_square_colors() {
+pub fn initialize_tile_colors() {
   init_pair(PRESET_FLAG, COLOR_RED, COLOR_WHITE);
 
   init_pair(PRESET_ONE, COLOR_BLUE, COLOR_WHITE);
@@ -39,7 +39,17 @@ pub fn initialize_square_colors() {
   init_pair(PRESET_SIX, COLOR_RED, COLOR_WHITE);
 }
 
-impl Square {
+impl Tile{
+  /// Generate a new number square
+  pub fn new(number: i8) -> Tile {
+    Tile {
+      number: number,
+      is_discovered: false,
+      is_mine: false,
+      is_flagged: false,
+    }
+  }
+
   pub fn get_color(self) -> Option<u32> {
     if self.is_flagged {
       Some(COLOR_PAIR(PRESET_FLAG))
