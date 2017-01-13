@@ -39,7 +39,7 @@ pub fn initialize_tile_colors() {
   init_pair(PRESET_SIX, COLOR_RED, COLOR_WHITE);
 }
 
-impl Tile{
+impl Tile {
   /// Generate a new number square
   pub fn new(number: i8) -> Tile {
     Tile {

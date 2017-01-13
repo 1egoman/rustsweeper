@@ -4,18 +4,22 @@ use self::rand::Rng;
 use tile;
 use minefield::{Minefield, MAP_SIZE_WIDTH, MAP_SIZE_HEIGHT};
 
+fn generate_mine() -> bool {
+  let mut rng = rand::thread_rng();
+  rng.gen_range(1, 8) == 1
+}
+
+
 pub fn generate(
   pos_x: usize,
   pos_y: usize,
 ) -> Minefield {
   let mut minefield = [[tile::Tile::new(0); MAP_SIZE_HEIGHT]; MAP_SIZE_WIDTH];
 
-  let mut rng = rand::thread_rng();
-
   // Generate all the mines, placing them randomly around the map.
   for i in 0..MAP_SIZE_WIDTH {
     for j in 0..MAP_SIZE_HEIGHT {
-      minefield[i][j].is_mine = rng.gen_range(1, 6) == 1;
+      minefield[i][j].is_mine = generate_mine();
     }
   }
 

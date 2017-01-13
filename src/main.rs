@@ -8,12 +8,14 @@ mod minefield;
 use minefield::{
   MAP_SIZE_WIDTH,
   MAP_SIZE_HEIGHT,
+
+  // And we're done!
   propegate_zeros_through_minefield,
   render,
 };
 
 fn main() {
-  // Generate the initial minefield
+  // Generate the initial minefield. This is really just a placeholder until the first move.
   let mut minefield = [[tile::Tile::new(0); MAP_SIZE_HEIGHT]; MAP_SIZE_WIDTH];
   let mut minefield_generated = false;
 
@@ -31,21 +33,17 @@ fn main() {
   // While this is true, keep looping through the mainloop.
   let mut is_running = true;
 
+  // THe main game loop.
   while is_running {
     // Render the minefield.
     render(minefield);
 
-    // Draw the cursor
+    // Draw the cursor in the right position.
     mv(pos_y as i32, pos_x as i32);
 
-
-    // log stuff out!
-    /* mv(0, 0); */
-    /* printw(&format!("Position Y: {}", pos_y)); */
-
     let character = getch();
-    mv(0, 0);
-    printw(&format!("Character: {}", character));
+    /* mv(0, 0); */
+    /* printw(&format!("Character: {}", character)); */
     match character {
       // Selecting a tile (the enter key). Can only select non flagged tiles.
       10 => {

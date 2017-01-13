@@ -23,6 +23,11 @@ pub fn propegate_zeros_through_minefield(
   initial_x: usize,
   initial_y: usize,
 ) {
+  // If the current tile isn't a mine, then uncover it.
+  if !minefield[initial_x][initial_y].is_mine {
+    minefield[initial_x][initial_y].is_discovered = true;
+  }
+
   // Coerse to i32 so these guys can (potentially) go below zero later.
   let x: i32 = initial_x as i32;
   let y: i32 = initial_y as i32;
@@ -39,14 +44,16 @@ pub fn propegate_zeros_through_minefield(
   for &(x, y) in positions.iter() {
     if is_in_minefield(x, y) {
 
-      // If the square isn't a bomb, then "discover" it.
-      if !minefield[x as usize][y as usize].is_mine {
+      // discover all squares outside the zero filled region.
+      if minefield[x as usize][y as usize].number > 0 {
         minefield[x as usize][y as usize].is_discovered = true;
       }
 
+
       // If the surrounding square is also a zero, then run this function on it, too.
-      if minefield[x as usize][y as usize].number == 0 {
-        propegate_zeros_through_minefield(&mut minefield, initial_x+1, initial_y+1);
+      if minefield[x as usize][y as usize].number == 0 &&
+        !minefield[x as usize][y as usize].is_discovered {
+        propegate_zeros_through_minefield(&mut minefield, x as usize, y as usize);
       }
     }
   }
